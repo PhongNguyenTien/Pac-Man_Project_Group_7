@@ -172,7 +172,7 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
                     totalRealCost = problem.getCostOfActions(newAction)
                     priorityQueue.push((successor, newAction, totalRealCost), totalRealCost + heuristic(successor, problem))
     
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
 
 
 # Abbreviations
