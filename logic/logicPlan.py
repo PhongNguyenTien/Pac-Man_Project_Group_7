@@ -50,6 +50,16 @@ def sentence1() -> Expr:
     (not A) or (not B) or C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    """ Note: conjoin = & ("và"), 
+            disjoin = | ("hoặc")"""
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    
+    fisrtExpression = A | B
+    secondExpression = ~A % (~B | C)
+    thirdExpression = disjoin(~A, ~B, C)
+    return conjoin([fisrtExpression, secondExpression, thirdExpression])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -63,6 +73,15 @@ def sentence2() -> Expr:
     (not D) implies C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    D = Expr('D')
+    firstExpression = C % (B | D)
+    secondExpression = A >> (~B & ~D)
+    thirdExpression = (~(B & (~C))) >> A
+    fourthExpression = (~D) >> C
+    return conjoin([firstExpression, secondExpression, thirdExpression, fourthExpression])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -80,6 +99,16 @@ def sentence3() -> Expr:
     Pacman is born at time 0.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    PacmanAlive_1 = PropSymbolExpr("PacmanAlive", time = 1)
+    PacmanAlive_0 = PropSymbolExpr("PacmanAlive", time = 0)
+    PacmanBorn_0 = PropSymbolExpr("PacmanBorn", time = 0)
+    PacmanKilled_0 = PropSymbolExpr("PacmanKilled", time = 0)
+    
+    firstSentence = PacmanAlive_1 % (PacmanAlive_0 & ~PacmanKilled_0 | ~PacmanAlive_0 & PacmanBorn_0)
+    secondSentence = ~(PacmanAlive_0 & PacmanBorn_0)
+    thirdSentence = PacmanBorn_0
+    
+    return conjoin([firstSentence, secondSentence, thirdSentence])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -94,8 +123,12 @@ def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     """Returns the result of findModel(Expr('a')) if lower cased expressions were allowed.
     You should not use findModel or Expr in this method.
     """
+    
+    """ Tìm một model để Expr('a') là true, ta thấy {a: True} là một model thỏa mãn"""
     a = Expr('A')
     "*** BEGIN YOUR CODE HERE ***"
+    a.op = 'a'
+    return {a: True}
     print("a.__dict__ is:", a.__dict__) # might be helpful for getting ideas
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
@@ -104,6 +137,10 @@ def entails(premise: Expr, conclusion: Expr) -> bool:
     """Returns True if the premise entails the conclusion and False otherwise.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    """ Cần xét xem với mọi minh họa thì mệnh đề (premise => conclusion) là chắc chắn hay không thỏa được
+            - Nếu là mệnh đề vững chắc <=> không tìm thấy minh họa để nó sai
+            - Nếu là mệnh để không thỏa được <=> không tìm thấy minh họa để nó đúng """
+    return not findModel(~(premise >> conclusion))
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -112,6 +149,8 @@ def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> boo
     pl_true may be useful here; see logic.py for its description.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    """ Xét xem mệnh đề đảo là đúng or sai"""
+    return pl_true(~inverse_statement, assignments)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
