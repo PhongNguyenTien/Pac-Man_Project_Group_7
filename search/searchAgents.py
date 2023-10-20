@@ -374,6 +374,20 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
+    current_pos, remaining_corners = state
+    remaining_corners = list(remaining_corners)
+    def distanceManhattan(point1, point2):
+        return abs(point2[0] - point1[0]) + abs( point2[1] -point1[1])
+
+    total_distance = 0
+
+    while remaining_corners:
+        distances = [(distanceManhattan(current_pos, corner), corner) for corner in remaining_corners]
+        nearest_corner = min(distances, key=lambda x: x[0])
+        total_distance += nearest_corner[0]
+        current_pos = nearest_corner[1]
+        remaining_corners.remove(nearest_corner[1])
+    return total_distance
     return 0 # Default to trivial solution
 
 class AStarCornersAgent(SearchAgent):
