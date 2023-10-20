@@ -173,10 +173,12 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     >>> print(pl_true(atleast1,model2))
     True
     >>> model3 = {A:True, B:True}
-    >>> print(pl_true(atleast1,model2))
+    >>> print(pl_true(atleast1,model3))
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
+    ''' Mệnh đề đúng <=> ít nhất 1 mệnh đề bất kì đúng'''
+    return disjoin(literals)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -189,6 +191,12 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    """ Xét conjoin(~Ai | ~Aj), i = 0->n, j = i+1->n (lấy các tổ hợp chập n có 2 phần tử trong các phần tử ~Ai (i=1->n))
+        Mệnh đề đúng <=> nhiều nhất một mệnh đề bất kì đúng"""
+    instance = []
+    for expr in itertools.combinations(literals, 2):
+        instance.append(~expr[0] | ~expr[1])
+    return conjoin(instance)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -200,6 +208,7 @@ def exactlyOne(literals: List[Expr]) -> Expr:
     the expressions in the list is true.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    return conjoin(atLeastOne(literals), atMostOne(literals))
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
