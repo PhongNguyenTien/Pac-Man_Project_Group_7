@@ -315,13 +315,14 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     pacphysics_sentences = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    position_time = []
+    #  If a wall is at (x, y) --> Pacman is not at (x, y)
     for x, y in all_coords:
-        #  If a wall is at (x, y) --> Pacman is not at (x, y)
         pacphysics_sentences.append(PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t))
-        if (x, y) in non_outer_wall_coords:
-            position_time.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        
     # - Pacman is at exactly one of the squares at timestep t.
+    position_time = []
+    for (x, y) in non_outer_wall_coords:
+        position_time.append(PropSymbolExpr(pacman_str, x, y, time=t))
     pacphysics_sentences.append(exactlyOne(position_time))
     
     # - Pacman takes exactly one action at timestep t.
@@ -406,7 +407,7 @@ def positionLogicPlan(problem) -> List:
     Note that STOP is not an available action.
     Overview: add knowledge incrementally, and query for a model each timestep. Do NOT use pacphysicsAxioms.
     """
-    walls_grid = problem.walls
+    walls_grid = problem.walls 
     width, height = problem.getWidth(), problem.getHeight()
     walls_list = walls_grid.asList()
     x0, y0 = problem.startState
@@ -420,6 +421,7 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+    
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
