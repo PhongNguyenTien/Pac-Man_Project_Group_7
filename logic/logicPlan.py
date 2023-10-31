@@ -374,6 +374,40 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+<<<<<<< refs/remotes/origin/hieu
+=======
+
+    # Add to KB: Initial knowledge: Pacman's initial location at timestep 0
+    KB.append(logic.PropSymbolExpr(pacman_str, x0, y0, time = 0))
+
+    # because Autograder will not test on layouts requiring ≥50 timesteps
+    for t in range(50):
+        # Print time step; this is to see that the code is running and how far it is
+        print(f"Time step = {t}")
+
+        # Add to KB: Initial knowledge: Pacman can only be at exactlyOne of the locations in non_wall_coords at timestep t
+        pacman_locations = exactlyOne([logic.PropSymbolExpr(pacman_str, wall_coord[0], wall_coord[1], time = t) for wall_coord in non_wall_coords])
+        KB.append(pacman_locations)  # Add to KB
+
+        # Is there a satisfying assignment for the variables given the knowledge base so far?
+        # Use findModel and pass in the Goal Assertion and KB
+        goal_state = logic.PropSymbolExpr(pacman_str, xg, yg, time = t)
+        model = findModel(goal_state & logic.conjoin(KB))
+        if (model):
+            # Return a sequence of actions from start to goal using extractActionSequence
+            return extractActionSequence(model, actions)  
+
+        # Add to KB: Pacman takes exactly one action per timestep
+        possible_actions = exactlyOne([logic.PropSymbolExpr(action, time = t) for action in actions])
+        KB.append(possible_actions)
+
+        # Add to KB: Transition Model sentences: call pacmanSuccessorAxiomSingle(...) for all possible pacman positions in non_wall_coords
+        for wall_coord in non_wall_coords: 
+            KB.append(pacmanSuccessorAxiomSingle(wall_coord[0], wall_coord[1], t+1, walls_grid))
+    
+    return None
+
+>>>>>>> local
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -403,8 +437,109 @@ def foodLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+
+    # Add to KB: Initial knowledge: Pacman's initial location at timestep 0
+    KB.append(logic.PropSymbolExpr(pacman_str, x0, y0, time = 0))
+    
+    # Initialize Food[x,y]_t variables with the code PropSymbolExpr(food_str, x, y, time=t),
+    # where each variable is true if and only if there is a food at (x, y) at time t
+    for food_coords in food: KB.append(logic.PropSymbolExpr(food_str, food_coords[0], food_coords[1], time = 0))
+
+    for t in range(50):
+        # Add to KB: Initial knowledge: Pacman can only be at exactlyOne of the locations in non_wall_coords at timestep t
+        pacman_locations = exactlyOne([logic.PropSymbolExpr(pacman_str, wall_coord[0], wall_coord[1], time = t) for wall_coord in non_wall_coords])
+        KB.append(pacman_locations)  # Add to KB
+
+        # Is there a satisfying assignment for the variables given the knowledge base so far?
+        # The goal assertion sentence is true if and only if all of the food have been eaten. This happens when all Food[x,y]_t are false.
+        goal_state = [~logic.PropSymbolExpr(food_str, food_coord[0], food_coord[1], time = t) for food_coord in food]
+        model = findModel(logic.conjoin(goal_state + KB))
+        if model:
+            return extractActionSequence(model, actions)
+
+        # Add to KB: Pacman takes exactly one action per timestep
+        possible_actions = exactlyOne([logic.PropSymbolExpr(action, time = t) for action in actions])
+        KB.append(possible_actions)
+
+        # Add to KB: Transition Model sentences: call pacmanSuccessorAxiomSingle(...) for all possible pacman positions in non_wall_coords
+        for wall_coord in non_wall_coords: KB.append(pacmanSuccessorAxiomSingle(wall_coord[0], wall_coord[1], t+1, walls))
+
+        # Add a food successor axiom: What is the relation between Food[x,y]_t+1 and Food[x,y]_t and Pacman[x,y]_t? The food successor axiom 
+        # should only involve these three variables, for any given (x, y) and t.
+        for food_coord in food:
+            pacman_loc = logic.PropSymbolExpr(pacman_str, food_coord[0], food_coord[1], time = t)
+            food_loc = logic.PropSymbolExpr(food_str, food_coord[0], food_coord[1], time = t)
+            next_food = logic.PropSymbolExpr(food_str, food_coord[0], food_coord[1], time = t+1)
+            
+            get_food = food_loc & pacman_loc
+            avoid_food = food_loc & ~pacman_loc
+
+            KB.append(avoid_food >> next_food)
+            KB.append(get_food >> ~next_food)
+    
+    return None
+
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
+
+#______________________________________________________________________________
+# HELPER FUNCTIONS
+
+def AddToKB(agent, KB, t, all_coords, non_outer_wall_coords, map):
+    '''
+    Add pacphysics, action, and percept information to KB
+    '''
+    
+    # Add to KB: pacphysics_axioms. Use sensorAxioms and allLegalSuccessorAxioms for localization and mapping, 
+    # and SLAMSensorAxioms and SLAMSuccessorAxioms for SLAM only
+    KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, map, sensorAxioms, allLegalSuccessorAxioms))
+    
+    # Add to KB: Pacman takes action prescribed by agent.actions[t]
+    KB.append(logic.PropSymbolExpr(agent.actions[t], time = t))
+    
+    # Get the percepts by calling agent.getPercepts() and pass the percepts to fourBitPerceptRules(...) for localization and mapping, or numAdjWallsPerceptRules(...) for SLAM.
+    # Add the resulting percept_rules to KB
+    KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+
+def FinPacmanLocationsKB(KB, t, coord, possible_loc):
+    '''
+    Find possible pacman locations with updated KB
+    '''
+    
+    cKB = logic.conjoin(KB)
+    pacman_loc = logic.PropSymbolExpr(pacman_str, coord[0], coord[1], time = t)
+    
+    # If there exists a satisfying assignment where Pacman is at (x, y) at time t, add (x, y) to possible_locations
+    if (findModel(cKB & pacman_loc)):
+        possible_loc.append((coord[0], coord[1]))
+    
+    # Add to KB: (x, y) locations where Pacman is provably at, at time t
+    elif (entails(cKB, pacman_loc)):
+        KB.append(pacman_loc)
+    
+    # Add to KB: (x, y) locations where Pacman is provably not at, at time t
+    else:
+        KB.append(~pacman_loc)
+
+
+def FindWallLocationsKB(KB, coord, map):
+    '''
+    Find provable wall locations with updated KB
+    '''
+    
+    wall_exists = logic.PropSymbolExpr(wall_str, coord[0], coord[1])
+    cKB = logic.conjoin(KB)
+    
+    # Add to KB and update known_map: (x, y) locations where there is provably a wall.
+    if entails(cKB, wall_exists):                
+        KB.append(wall_exists)
+        map[coord[0]][coord[1]] = 1
+    
+    # Add to KB and update known_map: (x, y) locations where there is provably not a wall.
+    elif entails(cKB, ~wall_exists):
+        KB.append(~wall_exists)
+        map[coord[0]][coord[1]] = 0
 
 #______________________________________________________________________________
 # QUESTION 6
