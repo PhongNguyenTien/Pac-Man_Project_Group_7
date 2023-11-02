@@ -601,12 +601,26 @@ def localization(problem, agent) -> Generator:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # Add to KB: where the walls are (walls_list) and aren't (not in walls_list)
+    for coord in all_coords:
+        if (coord not in walls_list): KB.append(~logic.PropSymbolExpr(wall_str, coord[0], coord[1]))
+        else: KB.append(logic.PropSymbolExpr(wall_str, coord[0], coord[1]))
 
     for t in range(agent.num_timesteps):
+        # Add pacphysics, action, and percept information to KB
+        AddToKB(agent, KB, t, all_coords, non_outer_wall_coords, walls_grid)
+
+        # Find possible pacman locations with updated KB
+        possible_locations = list()
+        for wall in non_outer_wall_coords:
+            FinPacmanLocationsKB(KB, t, wall, possible_locations)
+
+        # Call agent.moveToNextState(action_t) on the current agent action at timestep t
+        agent.moveToNextState(agent.actions[t])
         "*** END YOUR CODE HERE ***"
         yield possible_locations
-
+    util.raiseNotDefined()
 #______________________________________________________________________________
 # QUESTION 7
 
@@ -633,11 +647,26 @@ def mapping(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # Get initial location (pac_x_0, pac_y_0) of Pacman, and add this to KB
+    KB.append(logic.PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time = 0))
+    
+    # Add whether there is a wall at that location
+    KB.append(~logic.PropSymbolExpr(wall_str, pac_x_0, pac_y_0))
+    
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
+        # Add pacphysics, action, and percept information to KB
+        AddToKB(agent, KB, t, all_coords, non_outer_wall_coords, known_map)
+        
+        # Find provable wall locations with updated KB
+        for wall in non_outer_wall_coords:
+            FindWallLocationsKB(KB, wall, known_map)
+        
+        # Call agent.moveToNextState(action_t) on the current agent action at timestep t
+        agent.moveToNextState(agent.actions[t])
+
         yield known_map
+    util.raiseNotDefined()
 
 #______________________________________________________________________________
 # QUESTION 8
@@ -665,12 +694,35 @@ def slam(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    # Get initial location (pac_x_0, pac_y_0) of Pacman
+    KB.append(logic.PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time = 0))
+    
+    # Update known_map accordingly
+    known_map[pac_x_0][pac_y_0] = 0
+    
+    # Add the appropriate expression to KB
+    KB.append(~logic.PropSymbolExpr(wall_str, pac_x_0, pac_y_0))
+    
     for t in range(agent.num_timesteps):
-        "*** END YOUR CODE HERE ***"
-        yield (known_map, possible_locations)
+        # Add pacphysics, action, and percept information to KB. Use SLAMSensorAxioms, SLAMSuccessorAxioms, and numAdjWallsPerceptRules
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, known_map, SLAMSensorAxioms, SLAMSuccessorAxioms))
+        KB.append(logic.PropSymbolExpr(agent.actions[t], time = t))
+        KB.append(numAdjWallsPerceptRules(t, agent.getPercepts()))
+        
+        possible_locations = list()
+        for wall in non_outer_wall_coords:
+            # Find provable wall locations with updated KB
+            FindWallLocationsKB(KB, wall, known_map)
+            
+            # Find possible pacman locations with updated KB
+            FinPacmanLocationsKB(KB, t, wall, possible_locations)
+        
+        # Call agent.moveToNextState(action_t) on the current agent action at timestep t
+        agent.moveToNextState(agent.actions[t])
 
+        yield (known_map, possible_locations)
+    util.raiseNotDefined()
 
 # Abbreviations
 plp = positionLogicPlan
