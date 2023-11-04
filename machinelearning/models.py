@@ -26,6 +26,12 @@ class PerceptronModel(object):
             x: a node with shape (1 x dimensions)
         Returns: a node containing a single number (the score)
         """
+        
+        # Implement the run(self, x) method. 
+        #   This should compute the dot product of the stored weight vector and the given input, 
+        #   returning an nn.DotProduct object.
+        # dotProduct: tích vô hướng
+        return nn.DotProduct(x, self.get_weights())
         "*** YOUR CODE HERE ***"
 
     def get_prediction(self, x):
@@ -35,11 +41,30 @@ class PerceptronModel(object):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
+        
+        # Implement get_prediction(self, x), 
+        # which should return 1 if the dot product is non-negative or −1 otherwise.
+        #   You should use nn.as_scalar to convert a scalar Node into a Python floating-point number.
+        
+        # calculate the dot product:
+        y = self.run(x)
+        
+        # check the value of dot product is negetive or non-negative, return 1 if the dot product is non-negative or −1 otherwise
+        return -1 if nn.as_scalar(y) < 0 else 1
+        
 
     def train(self, dataset):
         """
         Train the perceptron until convergence.
         """
+        convergence = False
+        while (convergence == False):
+            convergence = True
+            for (x, y) in dataset.iterate_once(1):
+                if (self.get_prediction(x) != nn.as_scalar(y)):
+                    nn.Parameter.update(self.w, x, nn.as_scalar(y))
+                    convergence = False
+        
         "*** YOUR CODE HERE ***"
 
 class RegressionModel(object):
