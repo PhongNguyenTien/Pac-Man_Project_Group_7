@@ -75,6 +75,7 @@ class RegressionModel(object):
     """
     def __init__(self):
         # Initialize your model parameters here
+        
         "*** YOUR CODE HERE ***"
 
     def run(self, x):
@@ -179,7 +180,27 @@ class LanguageIDModel(object):
 
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-
+        self.hidden_layer_size = 200
+        
+        # input size (x): 1 * self.num_chars
+        # init W, bias: 
+        self.W_initial = nn.Parameter(self.num_chars, self.hidden_layer_size)
+        self.b_initial= nn.Parameter(1, self.hidden_layer_size)
+        
+        self.W_x = nn.Parameter(self.num_chars, self.hidden_layer_size)
+        
+        self.W_hidden = nn.Parameter(self.hidden_layer_size, self.hidden_layer_size)
+        self.b_hidden = nn.Parameter(1, self.hidden_layer_size)
+        
+        self.W_output = nn.Parameter(self.hidden_layer_size, len(self.languages))
+        self.b_output = nn.Parameter(1, len(self.languages))
+        
+        # learning rate:
+        self.learning_rate = .1
+        
+        # params (used by gradients):
+        self.params = [self.W_initial, self.b_initial, self.W_x, self.W_hidden, self.b_hidden, self.W_output, self.b_output]
+        
     def run(self, xs):
         """
         Runs the model for a batch of examples.
@@ -210,6 +231,16 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        """
+            h0 = ReLU(x0 * W_x, b_initial)
+            h_i = ReLU(x_i * W_x + h_(i-1) * W_hidden + b_hidden)
+            return h_output = h_i * W_output + b_output
+        """
+        h = nn.ReLU(nn.AddBias(nn.Linear(xs[0], self.W_initial), self.b_initial))
+        for i in range (1, len(xs)):
+            h = nn.ReLU(nn.AddBias(nn.Add(nn.Linear(xs[i], self.W_x), nn.Linear(h, self.W_hidden)), self.b_hidden))
+        z = nn.AddBias(nn.Linear(h, self.W_output), self.b_output)
+        return z
 
     def get_loss(self, xs, y):
         """
@@ -226,9 +257,22 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(xs), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        
+        batch_size = 50
+        loss = float('inf')
+        accuracy = 0
+        while accuracy < .85:
+            for (x, y) in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                gradients = nn.gradients(loss, self.params)
+                loss = nn.as_scalar(loss)
+                for i in range (len(self.params)):
+                    self.params[i].update(gradients[i], -self.learning_rate)
+            accuracy = dataset.get_validation_accuracy()
