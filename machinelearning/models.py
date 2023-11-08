@@ -272,7 +272,6 @@ class LanguageIDModel(object):
             for (x, y) in dataset.iterate_once(batch_size):
                 loss = self.get_loss(x, y)
                 gradients = nn.gradients(loss, self.params)
-                loss = nn.as_scalar(loss)
                 for i in range (len(self.params)):
                     self.params[i].update(gradients[i], -self.learning_rate)
             accuracy = dataset.get_validation_accuracy()
