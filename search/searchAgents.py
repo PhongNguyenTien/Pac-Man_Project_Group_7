@@ -309,6 +309,8 @@ class CornersProblem(search.SearchProblem):
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
+        pacman, corners = state
+        return not bool(corners)
         util.raiseNotDefined()
 
     def getSuccessors(self, state: Any):
