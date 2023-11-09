@@ -77,7 +77,21 @@ class RegressionModel(object):
         # Initialize your model parameters here
         
         "*** YOUR CODE HERE ***"
-
+        self.hidden_layer_size = 512
+        
+        # input size: 1 * 1
+        # hidden layer:
+        self.W_hidden = nn.Parameter(1, self.hidden_layer_size)
+        self.b_hidden = nn.Parameter(1, self.hidden_layer_size)
+        self.W_output = nn.Parameter(self.hidden_layer_size, 1)
+        self.b_output = nn.Parameter(1, 1)
+        
+        # learning rate:
+        self.learning_rate = .05
+        
+        # params (used by gradients):
+        self.params = [self.W_hidden, self.b_hidden, self.W_output, self.b_output]
+        
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -88,6 +102,9 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        z = nn.AddBias(nn.Linear(x, self.W_hidden), self.b_hidden)
+        a = nn.ReLU(z)
+        return nn.AddBias(nn.Linear(a, self.W_output), self.b_output)
 
     def get_loss(self, x, y):
         """
@@ -100,12 +117,23 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SquareLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 50
+        loss = float('inf')
+        while loss >= .015:
+            for (x, y) in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                gradients = nn.gradients(loss, self.params)
+                loss = nn.as_scalar(loss)
+                for i in range (len(self.params)):
+                    self.params[i].update(gradients[i], -self.learning_rate)
+        
 
 class DigitClassificationModel(object):
     """
@@ -124,7 +152,24 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
-
+        
+        self.hidden_layer_size = 200
+        self.image_flattened_dimention_size = 784
+        self.dights_num = 10
+        
+        # input size: 1 * 784
+        # hidden layer:
+        self.W_hidden = nn.Parameter(self.image_flattened_dimention_size, self.hidden_layer_size)
+        self.b_hidden = nn.Parameter(1, self.hidden_layer_size)
+        self.W_output = nn.Parameter(self.hidden_layer_size, self.dights_num)
+        self.b_output = nn.Parameter(1, self.dights_num)
+        
+        # learning rate:
+        self.learning_rate = .5
+        
+        # params (used by gradients):
+        self.params = [self.W_hidden, self.b_hidden, self.W_output, self.b_output]
+        
     def run(self, x):
         """
         Runs the model for a batch of examples.
@@ -140,6 +185,8 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        a = nn.ReLU(nn.AddBias(nn.Linear(x, self.W_hidden), self.b_hidden))
+        return nn.ReLU(nn.AddBias(nn.Linear(a, self.W_output), self.b_output))
 
     def get_loss(self, x, y):
         """
@@ -155,12 +202,23 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 100
+        loss = float('inf')
+        accuracy = 0
+        while accuracy < .98:
+            for (x, y) in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                gradients = nn.gradients(loss, self.params)
+                for i in range(len(self.params)):
+                    self.params[i].update(gradients[i], -self.learning_rate)
+            accuracy = dataset.get_validation_accuracy()
 
 class LanguageIDModel(object):
     """
@@ -182,7 +240,7 @@ class LanguageIDModel(object):
         "*** YOUR CODE HERE ***"
         self.hidden_layer_size = 200
         
-        # input size (x): 1 * self.num_chars
+        # input size : 1 * self.num_chars
         # init W, bias: 
         self.W_initial = nn.Parameter(self.num_chars, self.hidden_layer_size)
         self.b_initial= nn.Parameter(1, self.hidden_layer_size)
