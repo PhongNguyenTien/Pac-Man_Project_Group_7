@@ -124,7 +124,7 @@ class RegressionModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        batch_size = 50
+        batch_size = 200
         loss = float('inf')
         while loss >= .015:
             for (x, y) in dataset.iterate_once(batch_size):
@@ -186,7 +186,7 @@ class DigitClassificationModel(object):
         """
         "*** YOUR CODE HERE ***"
         a = nn.ReLU(nn.AddBias(nn.Linear(x, self.W_hidden), self.b_hidden))
-        return nn.ReLU(nn.AddBias(nn.Linear(a, self.W_output), self.b_output))
+        return nn.AddBias(nn.Linear(a, self.W_output), self.b_output)
 
     def get_loss(self, x, y):
         """
@@ -209,7 +209,7 @@ class DigitClassificationModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
-        batch_size = 100
+        batch_size = 200
         loss = float('inf')
         accuracy = 0
         while accuracy < .98:
